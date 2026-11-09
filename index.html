@@ -10,14 +10,43 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: var(--tg-theme-bg-color, #f8f9fa);
-            --text-color: var(--tg-theme-text-color, #212529);
-            --hint-color: var(--tg-theme-hint-color, #adb5bd);
+            --bg-color: var(--tg-theme-bg-color, #121212);
+            --text-color: var(--tg-theme-text-color, #ffffff);
+            --hint-color: var(--tg-theme-hint-color, #aaaaaa);
             --primary-color: var(--tg-theme-button-color, #ff5c8a);
             --primary-text: var(--tg-theme-button-text-color, #ffffff);
+            --card-bg: var(--tg-theme-secondary-bg-color, #1e1e1e);
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.15);
+            --shadow-hover: 0 12px 25px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Светлая тема (при переключении в Telegram) */
+        html.light-theme {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --hint-color: #707579;
             --card-bg: #ffffff;
-            --shadow-soft: 0 10px 25px -5px rgba(255, 92, 138, 0.12), 0 8px 10px -6px rgba(255, 92, 138, 0.08);
-            --shadow-hover: 0 15px 30px -5px rgba(255, 92, 138, 0.2);
+            --input-bg: #f0f0f2;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --shadow-soft: 0 10px 25px -5px rgba(255, 92, 138, 0.12);
+        }
+
+        /* Тёмная тема */
+        html.dark-theme {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --hint-color: #aaaaaa;
+            --card-bg: #1e1e1e;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
         }
 
         body {
@@ -30,21 +59,24 @@
             max-width: 414px;
             margin-left: auto;
             margin-right: auto;
-            box-sizing: border-box;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        h1, h2, h3, p, span, div {
+            color: var(--text-color);
         }
 
         h2 {
             text-align: center;
-            color: #ff5c8a;
+            color: #ff5c8a !important;
             font-size: 20px;
             font-weight: 700;
             margin-bottom: 16px;
             letter-spacing: -0.3px;
         }
 
-        /* Плавные анимации переключения вкладок */
         .tab-content {
             display: none;
             opacity: 0;
@@ -70,14 +102,13 @@
             }
         }
 
-        /* Объемные и мягкие карточки */
         .card {
             background: var(--card-bg);
             padding: 16px;
             border-radius: 20px;
             margin-bottom: 14px;
             box-shadow: var(--shadow-soft);
-            border: 1px solid rgba(255, 182, 193, 0.2);
+            border: 1px solid var(--border-color);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -85,10 +116,9 @@
             transform: scale(0.99);
         }
 
-        /* Счетчик дней с градиентом и тенью */
         .counter-card {
             background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
-            color: white;
+            color: white !important;
             text-align: center;
             padding: 20px;
             border-radius: 22px;
@@ -98,12 +128,8 @@
             overflow: hidden;
         }
 
-        .counter-card::after {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
-            pointer-events: none;
+        .counter-card * {
+            color: white !important;
         }
 
         .counter-card h3 {
@@ -122,21 +148,18 @@
             letter-spacing: -0.5px;
         }
 
-        /* Статус партнера */
         .partner-status {
-            background: #fff0f3;
+            background: rgba(255, 240, 243, 0.1);
             border: 1px solid rgba(255, 117, 140, 0.3);
-            color: #d6336c;
+            color: #ff758c;
             padding: 12px 16px;
             border-radius: 16px;
             font-size: 13px;
             text-align: center;
             margin-bottom: 14px;
             font-weight: 500;
-            box-shadow: 0 4px 12px rgba(255, 117, 140, 0.06);
         }
 
-        /* Ачивки */
         .achievements-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -145,28 +168,27 @@
         }
 
         .achievement-badge {
-            background: #fdf2f4;
+            background: var(--card-bg);
             border-radius: 14px;
             padding: 12px;
             text-align: center;
             font-size: 12px;
-            border: 1px solid rgba(255, 204, 213, 0.5);
+            border: 1px solid var(--border-color);
             transition: all 0.2s ease;
         }
 
         .achievement-badge.unlocked {
-            background: linear-gradient(135deg, #ffe6eb 0%, #fff0f3 100%);
+            background: linear-gradient(135deg, rgba(255, 117, 140, 0.2) 0%, rgba(255, 240, 243, 0.1) 100%);
             border-color: #ff758c;
             font-weight: bold;
-            color: #d6336c;
+            color: #ff758c !important;
             box-shadow: 0 4px 12px rgba(255, 117, 140, 0.15);
             transform: translateY(-2px);
         }
 
-        /* Сетка календаря */
         .cal-day {
             aspect-ratio: 1;
-            background: #fdf2f4;
+            background: var(--card-bg);
             border-radius: 10px;
             display: flex;
             flex-direction: column;
@@ -174,39 +196,37 @@
             justify-content: center;
             font-size: 13px;
             cursor: pointer;
-            border: 1px solid rgba(255, 204, 213, 0.4);
+            border: 1px solid var(--border-color);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
+            color: var(--text-color);
         }
 
         .cal-day:hover {
-            background: #ffe6eb;
             transform: scale(1.05);
         }
 
         .cal-day.in-range {
-            background: #ffe6eb !important;
-            color: #d6336c;
+            background: rgba(255, 117, 140, 0.2) !important;
+            color: #ff758c;
             border-color: #ff758c;
             border-radius: 0;
         }
 
         .cal-day.range-start {
             background: #ff758c !important;
-            color: white;
+            color: white !important;
             border-top-left-radius: 10px;
             border-bottom-left-radius: 10px;
             font-weight: bold;
-            box-shadow: 0 4px 10px rgba(255, 92, 138, 0.3);
         }
 
         .cal-day.range-end {
             background: #ff758c !important;
-            color: white;
+            color: white !important;
             border-top-right-radius: 10px;
             border-bottom-right-radius: 10px;
             font-weight: bold;
-            box-shadow: 0 4px 10px rgba(255, 92, 138, 0.3);
         }
 
         .cal-day.range-start.range-end {
@@ -220,7 +240,6 @@
             background-color: #ff5c8a;
             border-radius: 50%;
             margin-top: 3px;
-            box-shadow: 0 0 6px #ff5c8a;
         }
 
         .cal-day.empty {
@@ -229,7 +248,6 @@
             cursor: default;
         }
 
-        /* Галерея Моментов */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -238,20 +256,14 @@
         }
 
         .gallery-item {
-            background: #ffffff;
+            background: var(--card-bg);
             border-radius: 18px;
             overflow: hidden;
             box-shadow: var(--shadow-soft);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            border: 1px solid rgba(255, 182, 193, 0.2);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .gallery-item:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-hover);
+            border: 1px solid var(--border-color);
         }
 
         .gallery-img {
@@ -259,13 +271,7 @@
             height: 145px;
             object-fit: cover;
             cursor: pointer;
-            transition: transform 0.3s ease;
         }
-
-        .gallery-img:hover {
-            transform: scale(1.03);
-        }
-
         .gallery-info {
             padding: 10px;
             font-size: 12px;
@@ -273,7 +279,6 @@
 
         .gallery-caption {
             font-weight: 600;
-            color: #333;
             margin-bottom: 6px;
             white-space: nowrap;
             overflow: hidden;
@@ -285,8 +290,9 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .like-btn {
-            background: #fff0f3;
+            background: rgba(255, 92, 138, 0.15);
             border: none;
             color: #ff5c8a;
             font-size: 13px;
@@ -296,15 +302,8 @@
             margin: 0;
             width: auto;
             font-weight: bold;
-            transition: background 0.2s, transform 0.1s;
         }
 
-        .like-btn:active {
-            transform: scale(0.92);
-            background: #ffe6eb;
-        }
-
-        /* Модалка просмотра фото */
         .modal {
             display: none;
             position: fixed;
@@ -316,20 +315,12 @@
             align-items: center;
             flex-direction: column;
             padding: 16px;
-            box-sizing: border-box;
-            animation: fadeInModal 0.25s ease forwards;
-        }
-
-        @keyframes fadeInModal {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
 
         .modal img {
             max-width: 100%;
             max-height: 75vh;
             border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
         }
 
         .modal-caption {
@@ -337,49 +328,34 @@
             margin-top: 16px;
             font-size: 15px;
             text-align: center;
-            font-weight: 500;
         }
 
-        /* Поля ввода и кнопки */
         input, button {
             width: 100%;
             padding: 13px 16px;
             margin-top: 8px;
             border-radius: 14px;
-            border: 1px solid rgba(255, 182, 193, 0.4);
-            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-color);
             font-size: 14px;
             outline: none;
-            transition: all 0.2s ease;
-            background: #fff;
-            color: var(--text-color);
-        }
-
-        input:focus {
-            border-color: #ff5c8a;
-            box-shadow: 0 0 0 3px rgba(255, 92, 138, 0.15);
         }
 
         button {
             background: linear-gradient(135deg, #ff758c 0%, #ff5c8a 100%);
-            color: var(--primary-text);
+            color: #ffffff !important;
             border: none;
             font-weight: 700;
             cursor: pointer;
             margin-top: 12px;
             box-shadow: 0 6px 16px rgba(255, 92, 138, 0.3);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        button:hover {
-            box-shadow: 0 8px 20px rgba(255, 92, 138, 0.4);
         }
 
         button:active {
             transform: scale(0.97);
         }
 
-        /* Нижняя панель навигации */
         .nav-bar {
             position: fixed;
             bottom: 0;
@@ -387,14 +363,13 @@
             transform: translateX(-50%);
             width: 100%;
             max-width: 414px;
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--card-bg);
             backdrop-filter: blur(12px);
             display: flex;
             justify-content: space-around;
             padding: 10px 0;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
             z-index: 100;
-            border-top: 1px solid rgba(255, 182, 193, 0.2);
+            border-top: 1px solid var(--border-color);
         }
 
         .nav-item {
@@ -408,12 +383,12 @@
             padding: 8px 16px;
             font-weight: 500;
             border-radius: 12px;
-            transition: all 0.2s ease;
+            box-shadow: none;
         }
 
         .nav-item.active {
             color: #ff5c8a;
-            background: #fff0f3;
+            background: rgba(255, 92, 138, 0.1);
             font-weight: 700;
         }
     </style>
@@ -447,8 +422,8 @@
             <div class="achievement-badge" id="badge-photo">📸 Хранители моментов<br><span style="font-size:10px; opacity:0.7;">Загрузить фото</span></div>
         </div>
 
-        <hr style="border: none; border-top: 1px dashed #ffccd5; margin: 20px 0;" />
-        <h2 style="font-size: 16px; color: #888;">📜 Архив прошлых дней</h2>
+        <hr style="border: none; border-top: 1px dashed var(--border-color); margin: 20px 0;" />
+        <h2 style="font-size: 16px; color: var(--hint-color);">📜 Архив прошлых дней</h2>
         <div id="archiveList"></div>
     </div>
 
@@ -463,7 +438,7 @@
         </div>
 
         <div class="card">
-            <div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 12px; color: #888; margin-bottom: 8px;">
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 12px; color: var(--hint-color); margin-bottom: 8px;">
                 <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
             </div>
             <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
@@ -474,15 +449,15 @@
             <input type="text" id="eventNote" placeholder="Например: Учеба / Свободный вечер / Поездка..." />
             <div style="display: flex; gap: 8px; margin-top: 8px;">
                 <button onclick="window.saveSelectedRange()" style="margin: 0; flex: 2;">Сохранить на эти дни</button>
-                <button onclick="window.clearSelection()" style="margin: 0; flex: 1; background: #ddd; color: #555;">Сбросить</button>
+                <button onclick="window.clearSelection()" style="margin: 0; flex: 1; background: var(--input-bg); color: var(--text-color);">Сбросить</button>
             </div>
         </div>
 
-        <h2 style="font-size: 16px; color: #888; margin-top: 20px;">📋 Ближайшие планы</h2>
+        <h2 style="font-size: 16px; color: var(--hint-color); margin-top: 20px;">📋 Ближайшие планы</h2>
         <div id="eventsList"></div>
     </div>
 
-    <!-- Вкладка: Моменты (Галерея) -->
+    <!-- Вкладка: Моменты -->
     <div id="tab-photos" class="tab-content">
         <h2>📸 Наша галерея</h2>
         <div class="card">
@@ -508,8 +483,26 @@
     </div>
 
     <script>
-        if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.ready();
+        // Адаптация под темы Telegram
+        function applyTelegramTheme() {
+            const tg = window.Telegram?.WebApp;
+            if (tg) {
+                tg.ready();
+                tg.expand();
+            }
+
+            if (tg && tg.colorScheme) {if (tg.colorScheme === 'dark') {
+                    document.documentElement.classList.add('dark-theme');
+                    document.documentElement.classList.remove('light-theme');
+                } else {
+                    document.documentElement.classList.add('light-theme');
+                    document.documentElement.classList.remove('dark-theme');
+                }
+            }
+        }
+        applyTelegramTheme();
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.onEvent('themeChanged', applyTelegramTheme);
         }
 
         const SUPABASE_URL = 'https://umuvfbeefusyfchswdpi.supabase.co';
@@ -529,8 +522,7 @@
             btn.classList.add('active');
         }
 
-        // --- СЧЕТЧИК ДНЕЙ ВМЕСТЕ ---
-        const RELATIONSHIP_START_DATE = '2023-04-25'; 
+        const RELATIONSHIP_START_DATE = '2023-04-25';
 
         function initRelationshipCounter() {
             const startDate = new Date(RELATIONSHIP_START_DATE);
@@ -544,9 +536,8 @@
             }
         }
 
-        // --- МЯГКИЕ НАПОМИНАНИЯ ---
         function initSoftReminders() {
-            const REMINDER_INTERVAL_HOURS = 7; 
+            const REMINDER_INTERVAL_HOURS = 7;
             const lastReminderTime = localStorage.getItem('last_reminder_time');
             const now = Date.now();
             const intervalMs = REMINDER_INTERVAL_HOURS * 60 * 60 * 1000;
@@ -567,12 +558,12 @@
             }
         }
 
-        // --- ПУЛЫ КВЕСТОВ ---
         const QUESTS_FOR_HIM = [
             "👦 Твое личное: Купить и занести ей любимый горячий напиток или десерт по дороге",
             "👦 Твое личное: Заказать ей вкусняшку через доставку или встретить после учебы/дел",
             "👦 Твое личное: Взять в магазине 2 разных секретных вкусняшки на свой выбор для вечернего теста",
-            "👦 Твое личное: Устроить ей небольшой сюрприз по дороге к ней","👦 Твое личное: Купить вам по горячему чаю/кофе во время прогулки по району",
+            "👦 Твое личное: Устроить ей небольшой сюрприз по дороге к ней",
+            "👦 Твое личное: Купить вам по горячему чаю/кофе во время прогулки по району",
             "👦 Твое личное: Сделать для нее серию эстетичных фоток во время встречи",
             "👦 Твое личное: Устроить ей вечер расслабления (массаж спины/плеч под приятную музыку)"
         ];
@@ -593,7 +584,6 @@
             "💖 Общее: Поделиться тремя вещами за сегодня, за которые вы друг другу благодарны"
         ];
 
-        // --- АВТОГЕНЕРАЦИЯ ---
         async function checkAndGenerateDailyQuests() {
             if (!_supabase) return;
             
@@ -630,7 +620,6 @@
             localStorage.setItem('last_quest_date', todayStr);
         }
 
-        // --- ЗАГРУЗКА КВЕСТОВ ---
         async function loadTasks() {
             if (!_supabase) return;
             
@@ -646,10 +635,10 @@
                 data.forEach(task => {
                     if (task.is_completed) completedCount++;
                     const isChecked = task.is_completed ? 'checked' : '';
-                    list.innerHTML += '<div class="card" style="display: flex; align-items: center; justify-content: space-between;"><div><b style="font-size: 14px;">' + task.title + '</b></div><div><input type="checkbox" ' + isChecked + ' onchange="toggleTask(' + task.id + ', this.checked)" style="width: 24px; height: 24px; cursor: pointer;"></div></div>';
+                    list.innerHTML += '<div class="card" style="display: flex; align-items: center; justify-content: space-between;"><div><b style="font-size: 14px;">' + task.title + '</b></div><div><input type="checkbox" ' + isChecked + ' onchange="window.toggleTask(' + task.id + ', this.checked)" style="width: 24px; height: 24px; cursor: pointer;"></div></div>';
                 });
             } else {
-                list.innerHTML = '<div class="card" style="text-align: center; color: #888;">Пока нет активных квестов ✨</div>';
+                list.innerHTML = '<div class="card" style="text-align:center; color: var(--hint-color);">Пока нет активных квестов ✨</div>';
             }
 
             const { data: herData } = await _supabase.from('tasks').select('*').eq('target', 'her');
@@ -658,18 +647,12 @@
                 const herTask = herData[0];
                 if (herTask.is_completed) {
                     partnerStatusEl.innerHTML = '✨ Она уже выполнила свое задание на сегодня!';
-                    partnerStatusEl.style.background = '#e6fcf5';
-                    partnerStatusEl.style.borderColor = '#38d9a9';
-                    partnerStatusEl.style.color = '#0ca678';
+                    partnerStatusEl.style.color = '#38d9a9';
                 } else {
                     partnerStatusEl.innerHTML = '⏳ Она еще в процессе выполнения своего квеста...';
-                    partnerStatusEl.style.background = '#fff0f3';
-                    partnerStatusEl.style.borderColor = '#ff758c';
-                    partnerStatusEl.style.color = '#d6336c';
+                    partnerStatusEl.style.color = '#ff758c';
                 }
-            }
-
-            checkAchievements(completedCount);
+            }checkAchievements(completedCount);
         }
 
         window.addTask = async function() {
@@ -683,24 +666,16 @@
             loadTasks();
         }
 
-        async function toggleTask(taskId, isCompleted) {
-            if (!_supabase) return;
-            await _supabase.from('tasks').update({ is_completed: isCompleted }).eq('id', taskId);
-            loadTasks();
-            async function toggleTask(taskId, isCompleted) {
+        window.toggleTask = async function(taskId, isCompleted) {
             if (!_supabase) return;
             await _supabase.from('tasks').update({ is_completed: isCompleted }).eq('id', taskId);
             
             if (isCompleted) {
                 window.showLovePopup('quest_done');
             }
-            
             loadTasks();
         }
-        }
-        
 
-        // --- АЧИВКИ ---
         async function checkAchievements(myCompletedCount) {
             if (myCompletedCount > 0) {
                 document.getElementById('badge-1').classList.add('unlocked');
@@ -711,7 +686,6 @@
             }
         }
 
-        // --- АРХИВ ---
         async function loadArchive() {
             if (!_supabase) return;
             const { data } = await _supabase.from('tasks_archive').select('*').order('id', { ascending: false });
@@ -725,11 +699,10 @@
                     list.innerHTML += '<div class="card" style="opacity: 0.7; padding: 10px 14px; margin-bottom: 8px;"><span style="font-size: 13px;">' + statusIcon + ' ' + item.title + '</span></div>';
                 });
             } else {
-                list.innerHTML = '<div class="card" style="text-align: center; color: #888;">Архив пока пуст 📜</div>';
+                list.innerHTML = '<div class="card" style="text-align: center; color: var(--hint-color);">Архив пока пуст 📜</div>';
             }
         }
 
-        // --- КАЛЕНДАРЬ И ВИЗУАЛЬНЫЙ ДИАПАЗОН ---
         let currentCalendarDate = new Date();
         let rangeStartDate = null;
         let rangeEndDate = null;
@@ -832,7 +805,6 @@
 
             let curr = new Date(rangeStartDate);
             let end = new Date(rangeEndDate || rangeStartDate);
-
             let datesToInsert = [];
             while (curr <= end) {
                 const year = curr.getFullYear();
@@ -865,12 +837,9 @@
                     list.innerHTML += '<div class="card" style="padding: 10px 14px; margin-bottom: 8px; font-size: 13px;">📅 <b>' + ev.date + '</b> — ' + ev.note + '</div>';
                 });
             } else {
-                list.innerHTML = '<div class="card" style="text-align: center; color: #888;">Пока нет запланированных событий 🗓️</div>';
+                list.innerHTML = '<div class="card" style="text-align: center; color: var(--hint-color);">Пока нет запланированных событий 🗓</div>';
             }
-        }
-
-        // --- ГАЛЕРЕЯ МОМЕНТОВ ---
-        async function loadPhotos() {
+        }async function loadPhotos() {
             if (!_supabase) return;
             const { data, error } = await _supabase.from('photos').select('*').order('id', { ascending: false });
             if (error) return;
@@ -920,7 +889,7 @@
                     }
                 });
             } else {
-                list.innerHTML = '<div style="grid-column: span 2; text-align: center; color: #888; padding: 20px;">Пока нет загруженных моментов 🥺</div>';
+                list.innerHTML = '<div style="grid-column: span 2; text-align: center; color: var(--hint-color); padding: 20px;">Пока нет загруженных моментов 🥺</div>';
             }
         }
 
@@ -957,8 +926,8 @@
             const { data: publicUrlData } = _supabase.storage.from('photos').getPublicUrl(fileName);
             const imageUrl = publicUrlData.publicUrl;
 
-            await _supabase.from('photos').insert([{ 
-                image_url: imageUrl, 
+            await _supabase.from('photos').insert([{
+                image_url: imageUrl,
                 caption: caption,
                 user_name: 'Пользователь',
                 likes: 0
@@ -968,7 +937,7 @@
             captionInput.value = '';
             loadPhotos();
         }
-        // --- НЕЖНЫЕ УВЕДОМЛЕНИЯ ПАРТНЕРУ ---
+
         window.showLovePopup = function(type) {
             let title = '💖 Любимая';
             let message = 'Ты моя умничка, спасибо за то, что ты у меня есть!';
@@ -996,7 +965,7 @@
             }
         }
 
-        // --- СТАРТ ---
+        // Старт
         initRelationshipCounter();
         initSoftReminders();
         checkAndGenerateDailyQuests().then(() => {
