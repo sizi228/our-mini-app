@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Mini App 💖</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #0d0b14;
+            --text-color: #ffffff;
+            --hint-color: rgba(255, 255, 255, 0.65);
+            --accent-1: #ff4d8d;
+            --accent-2: #9d4edd;
+            --accent-gradient: linear-gradient(135deg, #ff4d8d 0%, #c77dff 100%);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.16);
+            --glass-highlight: rgba(255, 255, 255, 0.25);
+            --input-bg: rgba(255, 255, 255, 0.08);
+            --shadow-glow: 0 10px 30px rgba(255, 77, 141, 0.22);
+            --blob-1: rgba(255, 77, 141, 0.35);
+            --blob-2: rgba(157, 78, 221, 0.32);
+            --bubble-me: linear-gradient(135deg, #ff4d8d 0%, #d63384 100%);
+            --bubble-her: rgba(255, 255, 255, 0.11);
+        }
+
+        html.light-theme {
+            --bg-color: #f4effa;
+            --text-color: #1c1626;
+            --hint-color: rgba(28, 22, 38, 0.6);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.85);
+            --glass-highlight: rgba(255, 77, 141, 0.3);
+            --input-bg: rgba(255, 255, 255, 0.75);
+            --shadow-glow: 0 12px 28px rgba(255, 77, 141, 0.16);
+            --blob-1: rgba(255, 117, 140, 0.32);
+            --blob-2: rgba(199, 125, 255, 0.28);
+            --bubble-her: rgba(255, 255, 255, 0.85);
+        }
+
+        html.theme-anniversary {
+            --accent-1: #ffbe0b;
+            --accent-2: #ff006e;
+            --accent-gradient: linear-gradient(135deg, #ffbe0b 0%, #fb5607 50%, #ff006e 100%);
+            --shadow-glow: 0 12px 35px rgba(255, 190, 11, 0.3);
+            --blob-1: rgba(255, 190, 11, 0.35);
+            --blob-2: rgba(255, 0, 110, 0.35);
+        }
+
+        html.theme-newyear {
+            --bg-color: #071324;
+            --accent-1: #00f5d4;
+            --accent-2: #3a86ff;
+            --accent-gradient: linear-gradient(135deg, #00bbf9 0%, #00f5d4 100%);
+            --shadow-glow: 0 12px 35px rgba(0, 245, 212, 0.25);
+            --blob-1: rgba(0, 187, 249, 0.35);
+            --blob-2: rgba(0, 245, 212, 0.28);
+        }
+
+        html.theme-halloween {
+            --bg-color: #11091a;
+            --accent-1: #ff6d00;
+            --accent-2: #9d4edd;
+            --accent-gradient: linear-gradient(135deg, #ff6d00 0%, #7b2cbf 100%);
+            --shadow-glow: 0 12px 35px rgba(255, 109, 0, 0.3);
+            --blob-1: rgba(255, 109, 0, 0.35);
+            --blob-2: rgba(123, 44, 191, 0.4);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 16px 16px 96px;
+            max-width: 430px;
+            margin-inline: auto;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            transition: background-color 0.5s ease, color 0.4s ease;
+        }
+
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            filter: blur(75px);
+            animation: floatBlob 14s infinite alternate ease-in-out;
+        }
+
+        .blob-1 { top: -60px; left: -60px; background: var(--blob-1); }
+        .blob-2 { bottom: 60px; right: -70px; background: var(--blob-2); animation-delay: -7s; }
+
+        @keyframes floatBlob {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(35px, 45px) scale(1.18); }
+        }
+
+        #fxCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        h2 {
+            text-align: center;
+            background: var(--accent-gradient);
+            webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 20px;
+            font-weight: 800;
+            margin: 18px 0 14px;
+            letter-spacing: -0.3px;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active {
+            display: block;
+            animation: springIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes springIn {
+            0% { opacity: 0; transform: translateY(14px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 22px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: var(--shadow-glow);
+            transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .glass-card:active { transform: scale(0.985); }
+
+        .hero-card {
+            background: var(--accent-gradient);
+            border-radius: 26px;
+            padding: 22px 18px;
+            text-align: center;
+            margin-bottom: 14px;
+            box-shadow: 0 14px 34px rgba(255, 77, 141, 0.35);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+
+        .hero-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 60%);
+            animation: shimmerHero 6s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes shimmerHero {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hero-card * { color: #ffffff !important; }
+
+        .holiday-pill {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.22);
+            backdrop-filter: blur(8px);
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .hero-card .days-count {
+            font-size: 36px;
+            font-weight: 900;
+            margin: 4px 0;
+            letter-spacing: -0.8px;
+            text-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+        }
+
+        .next-holiday-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 12px 16px;
+        }
+
+        .partner-status {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 12px 16px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 999px;
+            overflow: hidden;
+            padding: 2px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            width: 0%;
+            border-radius: 999px;
+            box-shadow: 0 0 14px var(--accent-1);
+            transition: width 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .quest-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            animation: itemPop 0.35s ease backwards;
+        }
+
+        @keyframes itemPop {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .quest-check {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 28px !important;
+            height: 28px !important;
+            min-width: 28px;
+            margin: 0 !important;
+            padding: 0 !important;
+            border-radius: 10px;
+            border: 2px solid var(--accent-1);
+            background: var(--input-bg);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .quest-check:checked {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            transform: scale(1.1);
+            box-shadow: 0 0 14px var(--accent-1);
+        }
+
+        .quest-check:checked::after {
+            content: '✓';
+            position: absolute;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 900;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .achievement-badge {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            border-radius: 18px;
+            padding: 14px 10px;
+            text-align: center;
+            font-size: 12px;
+            border: 1px solid var(--glass-border);
+            opacity: 0.65;
+            transition: all 0.3s ease;
+        }
+
+        .achievement-badge.unlocked {
+            opacity: 1;
+            border-color: var(--accent-1);
+            box-shadow: 0 6px 20px rgba(255, 77, 141, 0.22);
+            transform: translateY(-2px);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 13px 15px;
+            margin-top: 8px;
+            border-radius: 14px;
+            border: 1px solid var(--glass-border);
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 3px rgba(255, 77, 141, 0.18);
+        }
+
+        button.primary-btn {
+            width: 100%;
+            padding: 14px 16px;
+            margin-top: 12px;
+            border-radius: 15px;
+            border: none;
+            background: var(--accent-gradient);
+            color: #ffffff !important;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255, 77, 141, 0.3);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+        }
+
+        button.primary-btn:active { transform: scale(0.96); filter: brightness(1.08); }
+
+        .cal-day {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+            transition: all 0.2s ease;
+        }
+
+        .cal-day.in-range { background: rgba(255, 77, 141, 0.22) !important; border-color: var(--accent-1); }
+        .cal-day.range-start, .cal-day.range-end {
+            background: var(--accent-gradient) !important;
+            color: #fff !important;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(255, 77, 141, 0.35);
+        }
+
+        .cal-day.has-event::after {
+            content: '';
+            width: 5px;
+            height: 5px;
+            background: var(--accent-1);
+            border-radius: 50%;
+            margin-top: 2px;
+        }
+
+        .cal-day.holiday-event::after { content: '✨'; font-size: 9px; }
+        .cal-day.empty { background: transparent; border: none; cursor: default; }
+
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .gallery-item {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .gallery-img { width: 100%; height: 150px; object-fit: cover; cursor: pointer; }
+        .like-btn {
+            background: rgba(255, 77, 141, 0.18);
+            border: 1px solid rgba(255, 77, 141, 0.35);
+            color: var(--accent-1);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .chat-stream { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+        .msg-bubble {
+            max-width: 82%;
+            padding: 11px 14px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            animation: itemPop 0.3s ease;
+        }
+
+        .msg-me { align-self: flex-end; background: var(--bubble-me); color: #ffffff !important; border-bottom-right-radius: 5px; }
+        .msg-me * { color: #ffffff !important; }
+        .msg-her { align-self: flex-start; background: var(--bubble-her); border-bottom-left-radius: 5px; }
+        .msg-meta { font-size: 10px; opacity: 0.72; margin-top: 5px; text-align: right; }
+
+        .round-video {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            display: block;
+            margin: 4px auto;
+        }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 24px);
+            max-width: 406px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 24px;
+            display: flex;
+            justify-content: space-around;
+            padding: 6px;
+            z-index: 100;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            color: var(--hint-color);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 10px;
+            border-radius: 18px;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .nav-item.active {
+            color: #ffffff;
+            background: var(--accent-gradient);
+            box-shadow: 0 4px 14px rgba(255, 77, 141, 0.35);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .modal img { max-width: 100%; max-height: 75vh; border-radius: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    <canvas id="fxCanvas"></canvas>
+
+    <!-- ВКЛАДКА 1: КВЕСТЫ -->
+    <div id="tab-tasks" class="tab-content active">
+        <div class="hero-card">
+            <div class="holiday-pill" id="activeThemeBadge">✨ Наше пространство</div>
+            <div style="font-size: 13px; opacity: 0.92; font-weight: 600;">💖 Вместе уже</div>
+            <p class="days-count" id="daysCounter">Загрузка...</p>
+        </div>
+
+        <div class="glass-card next-holiday-bar">
+            <span>🎉 Ближайшая дата:</span>
+            <b id="nextHolidayText" style="color: var(--accent-1);">Считаем...</b>
+        </div>
+
+        <div class="glass-card partner-status" id="partnerStatusText">
+            ⏳ Проверяем успехи второй половинки...
+        </div>
+
+        <div class="glass-card">
+            <div class="progress-info">
+                <span>⚡️ Прогресс квестов</span>
+                <span id="progressText">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+        </div>
+
+        <h2>✨ Наши квесты</h2>
+        <div class="glass-card">
+            <input type="text" id="taskInput" placeholder="Добавить свой мини-квест..." />
+            <button class="primary-btn" onclick="window.addTask()">Добавить задание</button>
+        </div>
+        <div id="tasksList"></div>
+
+        <h2>🏆 Наши достижения</h2>
+        <div class="achievements-grid">
+            <div class="achievement-badge" id="badge-1">🌱 Первый шаг<br><span style="font-size:10px; opacity:0.75;">Выполнить квест</span></div>
+            <div class="achievement-badge" id="badge-3">🔥 На стиле<br><span style="font-size:10px; opacity:0.75;">Серия 3 дня</span></div>
+            <div class="achievement-badge" id="badge-7">⚡️ Неудержимые<br><span style="font-size:10px; opacity:0.75;">Серия 7 дней</span></div>
+            <div class="achievement-badge" id="badge-photo">📸 Хранители<br><span style="font-size:10px; opacity:0.75;">Загрузить фото</span></div>
+        </div>
+
+        <h2>📜 Архив прошлых дней</h2>
+        <div id="archiveList"></div>
+    </div>
+
+    <!-- ВКЛАДКА 2: КАЛЕНДАРЬ -->
+    <div id="tab-calendar" class="tab-content">
+        <h2>📅 Календарь и праздники</h2>
+        <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center;">
+            <button class="primary-btn" onclick="window.changeMonth(-1)" style="width: auto; padding: 8px 14px; margin: 0;">◀️</button>
+            <b id="currentMonthLabel" style="font-size: 16px;">Месяц</b>
+            <button class="primary-btn" onclick="window.changeMonth(1)" style="width: auto; padding: 8px 14px; margin: 0;">▶️</button>
+        </div>
+
+        <div class="glass-card">
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: 700; font-size: 12px; color: var(--hint-color); margin-bottom: 8px;">
+                <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+            </div>
+            <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;"></div>
+        </div>
+
+        <div class="glass-card">
+            <h3 style="font-size: 14px; margin: 0 0 6px; color: var(--accent-1);" id="selectedRangeTitle">Выбери дни в календаре 👆</h3>
+            <input type="text" id="eventNote" placeholder="Название события или статуса..." />
+            <select id="eventTypeSelect">
+                <option value="default">📌 Обычный план / занятость</option>
+                <option value="anniversary">💖 Годовщина / Романтика (золотая тема)</option>
+                <option value="birthday">🎂 День рождения (праздничная тема)</option>
+                <option value="newyear">❄️ Зимний праздник (снежная тема)</option>
+            </select>
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button class="primary-btn" onclick="window.saveSelectedRange()" style="margin: 0; flex: 2;">Запомнить дату</button>
+                <button onclick="window.clearSelection()" style="margin: 0; flex: 1; border-radius: 15px; border: 1px solid var(--glass-border); background: var(--input-bg); color: var(--text-color); font-weight: 600;">Сброс</button>
+            </div>
+        </div>
+
+        <h2>📋 Запомненные даты</h2>
+        <div id="eventsList"></div>
+    </div>
+
+    <!-- ВКЛАДКА 3: МОМЕНТЫ -->
+    <div id="tab-photos" class="tab-content">
+        <h2>📸 Наша галерея</h2>
+        <div class="glass-card">
+            <input type="file" id="photoFile" accept="image/*" />
+            <input type="text" id="photoCaption" placeholder="Подпись к моменту..." />
+            <button class="primary-btn" onclick="window.uploadPhoto()">Загрузить момент</button>
+        </div>
+        <div class="gallery-grid" id="photosList"></div>
+    </div>
+
+    <!-- ВКЛАДКА 4: АРХИВ ПЕРЕПИСКИ -->
+    <div id="tab-chat" class="tab-content">
+        <h2>💬 Наши тёплые диалоги</h2>
+        <div class="glass-card" style="padding: 12px 14px;">
+            <input type="text" id="chatSearchInput" placeholder="🔍 Поиск по старым сообщениям..." oninput="window.filterChatHistory()" style="margin-top: 0;" />
+            <div style="font-size: 11px; color: var(--hint-color); margin-top: 8px; text-align: center;">
+                Показаны сообщения до отсечки (последние 2 месяца скрыты)
+            </div>
+        </div>
+        <div class="chat-stream" id="chatStream"></div>
+        <button class="primary-btn" id="loadMoreChatBtn" onclick="window.renderMoreChat()" style="display: none;">Показать ещё сообщения</button>
+    </div>
+
+    <div class="modal" id="photoModal" onclick="this.style.display='none'">
+        <img id="modalImg" src="" />
+        <div style="color: #fff; margin-top: 14px; font-size: 15px;" id="modalCaption"></div>
+    </div>
+
+    <div class="nav-bar">
+        <button class="nav-item active" onclick="window.switchTab('tasks', this)">Квесты</button>
+        <button class="nav-item" onclick="window.switchTab('calendar', this)">Даты</button>
+        <button class="nav-item" onclick="window.switchTab('photos', this)">Фото</button>
+        <button class="nav-item" onclick="window.switchTab('chat', this)">Чат</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram?.WebApp;
+        const tgUser = tg?.initDataUnsafe?.user;
+        const currentUserName = tgUser ? (tgUser.username ? `@${tgUser.username}` : tgUser.first_name) : 'Эльдар';
+
+        function getLocalTodayStr() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function triggerHaptic(type = 'light') {
+            try {
+                if (tg?.HapticFeedback) {
+                    if (type === 'success') tg.HapticFeedback.notificationOccurred('success');
+                    else tg.HapticFeedback.impactOccurred(type);
+                }
+            } catch (e) {}
+        }
+
+        const FIXED_HOLIDAYS = {
+            '04-25': { name: 'Наша Годовщина 💖', theme: 'theme-anniversary' },
+            '03-10': { name: 'День Рождения Эльдара 🎂', theme: 'theme-anniversary' },
+            '02-14': { name: 'День Влюблённых 💘', theme: 'theme-anniversary' },
+            '03-08': { name: '8 Марта 🌷', theme: 'theme-anniversary' },
+            '10-31': { name: 'Хэллоуин 🎃', theme: 'theme-halloween' },
+            '12-31': { name: 'Новый Год 🎄', theme: 'theme-newyear' },
+            '01-01': { name: 'Новый Год ❄️', theme: 'theme-newyear' }
+        };
+
+        let particleMode = 'sparkles';
+
+        function applyHolidayAndBaseTheme(customDbEvents = []) {
+            if (tg) { tg.ready(); tg.expand(); }
+            if (tg && tg.colorScheme === 'light') document.documentElement.classList.add('light-theme');
+            else document.documentElement.classList.remove('light-theme');
+
+            const now = new Date();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const todayMMDD = `${mm}-${dd}`;
+            const todayISO = getLocalTodayStr();
+
+            document.documentElement.classList.remove('theme-anniversary', 'theme-newyear', 'theme-halloween');
+
+            let activeHoliday = FIXED_HOLIDAYS[todayMMDD] || null;
+            if (!activeHoliday && ((mm === '12' && parseInt(dd) >= 20) || (mm === '01' && parseInt(dd) <= 10))) {
+                activeHoliday = { name: 'Новогоднее настроение ❄️', theme: 'theme-newyear' };
+            }
+            if (!activeHoliday && mm === '10' && parseInt(dd) >= 28) {
+                activeHoliday = { name: 'Мистический Хэллоуин 🎃', theme: 'theme-halloween' };
+            }
+
+            const todayDbHoliday = customDbEvents.find(ev => ev.date === todayISO && ev.event_type && ev.event_type !== 'default');
+            if (todayDbHoliday) {
+                const mapType = { 'anniversary': 'theme-anniversary', 'birthday': 'theme-anniversary', 'newyear': 'theme-newyear' };
+                activeHoliday = { name: todayDbHoliday.note + ' ✨', theme: mapType[todayDbHoliday.event_type] || 'theme-anniversary' };
+            }
+
+            const badgeEl = document.getElementById('activeThemeBadge');
+            if (activeHoliday) {
+                document.documentElement.classList.add(activeHoliday.theme);
+                if (badgeEl) badgeEl.innerText = activeHoliday.name;
+                particleMode = activeHoliday.theme === 'theme-newyear' ? 'snow' : 'hearts';
+            } else {
+                if (badgeEl) badgeEl.innerText = '✨ Наше пространство';
+                particleMode = 'sparkles';
+            }
+            updateNextHolidayWidget(customDbEvents);
+        }
+
+        function updateNextHolidayWidget(customDbEvents = []) {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const currentYear = now.getFullYear();
+            let candidates = [];
+
+            Object.entries(FIXED_HOLIDAYS).forEach(([mmdd, info]) => {
+                let target = new Date(`${currentYear}-${mmdd}T00:00:00`);
+                if (target < now) target.setFullYear(currentYear + 1);
+                candidates.push({ date: target, name: info.name });
+            });
+
+            customDbEvents.forEach(ev => {
+                const target = new Date(`${ev.date}T00:00:00`);
+                if (target >= now) candidates.push({ date: target, name: ev.note });
+            });
+
+            candidates.sort((a, b) => a.date - b.date);
+            const nextEl = document.getElementById('nextHolidayText');
+            if (candidates.length > 0 && nextEl) {
+                const nearest = candidates[0];
+                const diffDays = Math.round((nearest.date - now) / (1000 * 60 * 60 * 24));
+                nextEl.innerText = diffDays === 0 ? `Сегодня: ${nearest.name}!` : `${nearest.name} (через ${diffDays} дн.)`;
+            }
+        }
+
+        function initParticles() {
+            const canvas = document.getElementById('fxCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let w = canvas.width = window.innerWidth;
+            let h = canvas.height = window.innerHeight;
+            window.addEventListener('resize', () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; });
+
+            const particles = Array.from({ length: 24 }, () => ({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                r: Math.random() * 2.5 + 1,
+                speedY: Math.random() * 0.6 + 0.25,
+                alpha: Math.random() * 0.5 + 0.2
+            }));
+
+            function draw() {
+                ctx.clearRect(0, 0, w, h);
+                particles.forEach(p => {
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    if (particleMode === 'snow') {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+                        p.y += p.speedY;
+                        if (p.y > h) { p.y = -5; p.x = Math.random() * w; }
+                    } else if (particleMode === 'hearts') {
+                        ctx.font = `${Math.round(p.r * 5)}px sans-serif`;
+                        ctx.fillText('💖', p.x, p.y);
+                        p.y -= p.speedY;
+                        if (p.y < -15) { p.y = h + 10; p.x = Math.random() * w; }
+                    } else {
+                        ctx.fillStyle = '#ff758c';
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.8, 0, Math.PI * 2); ctx.fill();
+                        p.y -= p.speedY * 0.6;
+                        if (p.y < -5) { p.y = h + 5; p.x = Math.random() * w; }
+                    }
+                    ctx.restore();
+                });
+                requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        const SUPABASE_URL = 'https://umuvfbeefusyfchswdpi.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wLTgPzh8mE00_mpdRjPHaQ_OqLTd-35';
+        let _supabase = null;
+        try { _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) {}
+
+        window.switchTab = function(tabId, btn) {
+            triggerHaptic('light');
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            btn.classList.add('active');
+        };
+
+        const RELATIONSHIP_START_DATE = '2023-04-25';
+        function initRelationshipCounter() {
+            const diffDays = Math.ceil(Math.abs(new Date() - new Date(RELATIONSHIP_START_DATE)) / (1000 * 60 * 60 * 24));
+            const counterEl = document.getElementById('daysCounter');
+            if (counterEl) counterEl.innerText = diffDays + ' дней 💕';
+        }
+
+        const QUESTS_FOR_HIM = [
+            "👦 Твое личное: Купить и занести ей любимый горячий напиток или десерт по дороге",
+            "👦 Твое личное: Заказать ей вкусняшку через доставку или встретить после учебы/дел",
+            "👦 Твое личное: Взять в магазине 2 разных секретных вкусняшки на свой выбор",
+            "👦 Твое личное: Сделать для нее серию эстетичных фоток во время встречи",
+            "👦 Твое личное: Устроить ей вечер расслабления под приятную музыку"
+        ];
+        const QUESTS_FOR_HER = [
+            "👧 Ее личное: Записать ему теплое голосовое сообщение с пожеланием отличного дня",
+            "👧 Ее личное: Спрятать ему в карман куртки или сумку милую записку-сюрприз",
+            "👧 Ее личное: Написать приятные слова перед его выходом из дома"
+        ];
+        const QUESTS_BOTH = [
+            "💖 Общее: Подобрать фильм или сериал на следующий совместный вечер",
+            "💖 Общее: Составить общий мини-плейлист из 3 атмосферных треков"
+        ];
+
+        // --- ИСПРАВЛЕННАЯ ЛОГИКА КВЕСТОВ (С ПРОВЕРКОЙ ПО БАЗЕ, А НЕ ПО LOCALSTORAGE) ---
+        let isGeneratingQuests = false;
+
+        async function checkAndGenerateDailyQuests() {
+            if (!_supabase || isGeneratingQuests) return;
+            isGeneratingQuests = true;
+
+            try {
+                const todayStr = getLocalTodayStr();
+                const { data: currentTasks, error } = await _supabase.from('tasks').select('*');
+                if (error) return;
+
+                if (currentTasks && currentTasks.length > 0) {
+                    // Определяем дату квестов по базе: либо из поля quest_date, либо из created_at
+                    const getTaskDate = (t) => {
+                        if (t.quest_date) return t.quest_date;
+                        if (t.created_at) {
+                            const dt = new Date(t.created_at);
+                            return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+                        }
+                        return todayStr;
+                    };
+
+                    const hasTodayQuests = currentTasks.some(t => getTaskDate(t) === todayStr);
+
+                    // Если в базе УЖЕ есть сегодняшние квесты — ничего не удаляем и не переносим в архив!
+                    if (hasTodayQuests) {
+                        return;
+                    }
+
+                    // Если все задачи в базе действительно за прошлые дни — переносим их в архив
+                    for (const task of currentTasks) {
+                        await _supabase.from('tasks_archive').insert([{
+                            title: task.title,
+                            status: task.is_completed ? 'completed' : 'expired',
+                            user_name: task.user_name || currentUserName
+                        }]);
+                        await _supabase.from('tasks').delete().eq('id', task.id);
+                    }
+                }
+
+                // Генерируем свежий набор на сегодня
+                await _supabase.from('tasks').insert([
+                    { title: QUESTS_FOR_HIM[Math.floor(Math.random() * QUESTS_FOR_HIM.length)], target: 'him', is_completed: false, user_name: currentUserName, quest_date: todayStr },
+                    { title: QUESTS_FOR_HER[Math.floor(Math.random() * QUESTS_FOR_HER.length)], target: 'her', is_completed: false, user_name: currentUserName, quest_date: todayStr },
+                    { title: QUESTS_BOTH[Math.floor(Math.random() * QUESTS_BOTH.length)], target: 'both', is_completed: false, user_name: currentUserName, quest_date: todayStr }
+                ]);
+            } finally {
+                isGeneratingQuests = false;
+            }
+        }
+
+        async function loadTasks() {
+            if (!_supabase) return;
+            const { data } = await _supabase.from('tasks').select('*').in('target', ['him', 'both']).order('id', { ascending: true });
+            const list = document.getElementById('tasksList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            let completedCount = 0;
+            const totalTasks = data ? data.length : 0;
+
+            if (data && data.length > 0) {
+                data.forEach(task => {
+                    if (task.is_completed) completedCount++;
+                    const isChecked = task.is_completed ? 'checked' : '';
+                    const textStyle = task.is_completed ? 'text-decoration: line-through; opacity: 0.6;' : '';
+                    list.innerHTML += `<div class="glass-card quest-row"><div style="font-size: 14px; font-weight: 600; ${textStyle}">${task.title}</div><input type="checkbox" class="quest-check" ${isChecked} onchange="window.toggleTask(${task.id}, this.checked)"></div>`;
+                });
+            } else {
+                list.innerHTML = '<div class="glass-card" style="text-align:center; color: var(--hint-color);">Пока нет активных квестов ✨</div>';
+            }
+
+            const percent = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+            document.getElementById('progressBarFill').style.width = percent + '%';
+            document.getElementById('progressText').innerText = `${percent}% (${completedCount}/${totalTasks})`;
+
+            const { data: herData } = await _supabase.from('tasks').select('*').eq('target', 'her');
+            const partnerStatusEl = document.getElementById('partnerStatusText');
+            if (herData && herData.length > 0 && partnerStatusEl) {
+                if (herData[0].is_completed) {
+                    partnerStatusEl.innerHTML = '✨ Она уже выполнила свое задание на сегодня!';
+                    partnerStatusEl.style.color = '#38d9a9';
+                } else {
+                    partnerStatusEl.innerHTML = '⏳ Она еще в процессе выполнения своего квеста...';
+                }
+            }
+            if (completedCount > 0) document.getElementById('badge-1')?.classList.add('unlocked');
+        }
+
+        window.addTask = async function() {
+            if (!_supabase) return;
+            const inputField = document.getElementById('taskInput');
+            if (!inputField.value.trim()) return;
+            triggerHaptic('medium');
+            await _supabase.from('tasks').insert([{
+                title: '👦 Твое личное: ' + inputField.value.trim(),
+                target: 'him',
+                is_completed: false,
+                user_name: currentUserName,
+                quest_date: getLocalTodayStr()
+            }]);
+            inputField.value = '';
+            loadTasks();
+        };
+
+        window.toggleTask = async function(taskId, isCompleted) {
+            if (!_supabase) return;
+            triggerHaptic(isCompleted ? 'success' : 'light');
+            await _supabase.from('tasks').update({ is_completed: isCompleted }).eq('id', taskId);
+            loadTasks();
+        };
+
+        async function loadArchive() {
+            if (!_supabase) return;
+            const { data } = await _supabase.from('tasks_archive').select('*').order('id', { ascending: false }).limit(15);
+            const list = document.getElementById('archiveList');
+            if (!list) return;
+            list.innerHTML = '';
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    const icon = item.status === 'completed' ? '✅' : '⏳';
+                    list.innerHTML += `<div class="glass-card" style="opacity: 0.72; padding: 11px 14px; font-size: 13px;">${icon} ${item.title}</div>`;
+                });
+            } else {
+                list.innerHTML = '<div class="glass-card" style="text-align: center; color: var(--hint-color);">Архив пока пуст 📜</div>';
+            }
+        }
+
+        let currentCalendarDate = new Date();
+        let rangeStartDate = null;
+        let rangeEndDate = null;
+
+        window.renderCalendar = async function() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            const monthsNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+            document.getElementById('currentMonthLabel').innerText = `${monthsNames[month]} ${year}`;
+
+            if (!_supabase) return;
+            const { data: events } = await _supabase.from('calendar_events').select('*');
+            const safeEvents = events || [];
+            applyHolidayAndBaseTheme(safeEvents);
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+            const totalDays = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDayIndex; i++) grid.innerHTML += '<div class="cal-day empty"></div>';
+            for (let day = 1; day <= totalDays; day++) {
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                let classes = 'cal-day';
+                if (rangeStartDate && dateString === rangeStartDate) classes += ' range-start';
+                if (rangeEndDate && dateString === rangeEndDate) classes += ' range-end';
+                if (rangeStartDate && rangeEndDate && dateString > rangeStartDate && dateString < rangeEndDate) classes += ' in-range';
+
+                const dayEvent = safeEvents.find(ev => ev.date === dateString);
+                if (dayEvent) classes += (dayEvent.event_type && dayEvent.event_type !== 'default') ? ' holiday-event' : ' has-event';
+                grid.innerHTML += `<div class="${classes}" onclick="window.handleDayClick('${dateString}')">${day}</div>`;
+            }
+
+            const list = document.getElementById('eventsList');
+            list.innerHTML = '';
+            if (safeEvents.length > 0) {
+                safeEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+                safeEvents.forEach(ev => {
+                    const icon = ev.event_type && ev.event_type !== 'default' ? '🎉' : '📅';
+                    list.innerHTML += `<div class="glass-card" style="padding: 11px 14px; font-size: 13px;">${icon} <b>${ev.date}</b> — ${ev.note}</div>`;
+                });
+            } else {
+                list.innerHTML = '<div class="glass-card" style="text-align: center; color: var(--hint-color);">Пока нет сохранённых дат 🗓</div>';
+            }
+        };
+
+        window.changeMonth = function(dir) {
+            triggerHaptic('light');
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + dir);
+            window.renderCalendar();
+        };
+
+        window.handleDayClick = function(dateStr) {
+            triggerHaptic('light');
+            const titleEl = document.getElementById('selectedRangeTitle');
+            if (!rangeStartDate || (rangeStartDate && rangeEndDate)) {
+                rangeStartDate = dateStr;
+                rangeEndDate = null;
+                titleEl.innerText = `Начало: ${dateStr} (выбери конец или жми сохранить)`;
+            } else {
+                if (dateStr < rangeStartDate) { rangeEndDate = rangeStartDate; rangeStartDate = dateStr; }
+                else { rangeEndDate = dateStr; }
+                titleEl.innerText = `Выбрано: с ${rangeStartDate} по ${rangeEndDate}`;
+            }
+            window.renderCalendar();
+        };
+
+        window.clearSelection = function() {
+            rangeStartDate = null;
+            rangeEndDate = null;
+            document.getElementById('selectedRangeTitle').innerText = 'Выбери дни в календаре 👆';
+            document.getElementById('eventNote').value = '';
+            window.renderCalendar();
+        };
+
+        window.saveSelectedRange = async function() {
+            if (!_supabase || !rangeStartDate) return;
+            const note = document.getElementById('eventNote').value.trim();
+            const eventType = document.getElementById('eventTypeSelect').value;
+            if (!note) return;
+
+            triggerHaptic('success');
+            let curr = new Date(rangeStartDate);
+            const end = new Date(rangeEndDate || rangeStartDate);
+            while (curr <= end) {
+                const dateStr = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}-${String(curr.getDate()).padStart(2, '0')}`;
+                await _supabase.from('calendar_events').insert([{ date: dateStr, user_name: currentUserName, note: note, event_type: eventType }]);
+                curr.setDate(curr.getDate() + 1);
+            }
+            window.clearSelection();
+            window.renderCalendar();
+        };
+
+        async function loadPhotos() {
+            if (!_supabase) return;
+            const { data } = await _supabase.from('photos').select('*').order('id', { ascending: false });
+            const list = document.getElementById('photosList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (data && data.length > 0) {
+                document.getElementById('badge-photo')?.classList.add('unlocked');
+                data.forEach(ph => {
+                    if (!ph.image_url) return;
+                    const div = document.createElement('div');
+                    div.className = 'gallery-item';
+                    div.innerHTML = `
+                        <img src="${ph.image_url}" class="gallery-img" onclick="window.openModal('${ph.image_url}', '${(ph.caption || '').replace(/'/g, '')}')">
+                        <div style="padding: 10px; font-size: 12px;">
+                            <div style="font-weight: 700; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${ph.caption || 'Без подписи'}</div>
+                            <div style="font-size: 10px; opacity: 0.65; margin-bottom: 6px;">от ${ph.user_name || 'нас'}</div>
+                            <button class="like-btn" onclick="window.likePhoto(${ph.id}, ${ph.likes || 0})">❤️ ${ph.likes || 0}</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            } else {
+                list.innerHTML = '<div class="glass-card" style="grid-column: span 2; text-align: center; color: var(--hint-color);">Пока нет загруженных моментов 🥺</div>';
+            }
+        }
+
+        window.likePhoto = async function(id, likes) {
+            if (!_supabase) return;
+            triggerHaptic('medium');
+            await _supabase.from('photos').update({ likes: likes + 1 }).eq('id', id);
+            loadPhotos();
+        };
+
+        window.openModal = function(url, caption) {
+            document.getElementById('modalImg').src = url;
+            document.getElementById('modalCaption').innerText = caption;
+            document.getElementById('photoModal').style.display = 'flex';
+        };
+
+        window.uploadPhoto = async function() {
+            if (!_supabase) return;
+            const file = document.getElementById('photoFile').files[0];
+            const caption = document.getElementById('photoCaption').value;
+            if (!file) return;
+
+            triggerHaptic('medium');
+            const fileName = Date.now() + '_' + file.name;
+            const { error } = await _supabase.storage.from('photos').upload(fileName, file);
+            if (error) { alert('Ошибка: ' + error.message); return; }
+
+            const { data: urlData } = _supabase.storage.from('photos').getPublicUrl(fileName);
+            await _supabase.from('photos').insert([{ image_url: urlData.publicUrl, caption: caption, user_name: currentUserName, likes: 0 }]);
+
+            document.getElementById('photoFile').value = '';
+            document.getElementById('photoCaption').value = '';
+            triggerHaptic('success');
+            loadPhotos();
+        };
+
+        let allSafeMessages = [];
+        let filteredMessages = [];
+        let renderedCount = 0;
+        const PAGE_SIZE = 40;
+
+        async function initChatArchive() {
+            const stream = document.getElementById('chatStream');
+            try {
+                const res = await fetch('./chat_history.json');
+                if (!res.ok) throw new Error('no_file');
+                const rawMessages = await res.json();
+
+                const cutoffDate = new Date();
+                cutoffDate.setMonth(cutoffDate.getMonth() - 2);
+                allSafeMessages = rawMessages.filter(m => new Date(m.date) < cutoffDate);
+                filteredMessages = allSafeMessages;
+                window.renderMoreChat(true);
+            } catch (e) {
+                stream.innerHTML = `
+                    <div class="glass-card" style="text-align: center; font-size: 13px; line-height: 1.5;">
+                        <b>📂 Архив переписки готов к подключению</b><br><br>
+                        <span style="color: var(--hint-color);">Загрузи очищенный файл <code>chat_history.json</code> в корень репозитория GitHub — сообщения без последних 2 месяцев появятся здесь автоматически.</span>
+                    </div>
+                `;
+            }
+        }
+
+        window.filterChatHistory = function() {
+            const q = document.getElementById('chatSearchInput').value.toLowerCase().trim();
+            filteredMessages = q ? allSafeMessages.filter(m => (m.text || '').toLowerCase().includes(q)) : allSafeMessages;
+            window.renderMoreChat(true);
+        };
+
+        window.renderMoreChat = function(reset = false) {
+            const stream = document.getElementById('chatStream');
+            const btn = document.getElementById('loadMoreChatBtn');
+            if (reset) { stream.innerHTML = ''; renderedCount = 0; }
+
+            const slice = filteredMessages.slice(renderedCount, renderedCount + PAGE_SIZE);
+            slice.forEach(msg => {
+                const isMe = msg.sender === 'me';
+                const bubble = document.createElement('div');
+                bubble.className = `msg-bubble ${isMe ? 'msg-me' : 'msg-her'}`;
+
+                let mediaHtml = '';
+                if (msg.type === 'voice' && msg.media_url) {
+                    mediaHtml = `<audio controls src="${msg.media_url}" style="width: 210px; height: 34px; margin-top: 4px;"></audio>`;
+                } else if (msg.type === 'round' && msg.media_url) {
+                    mediaHtml = `<video class="round-video" controls playsinline src="${msg.media_url}"></video>`;
+                } else if (msg.type === 'photo' && msg.media_url) {
+                    mediaHtml = `<img src="${msg.media_url}" style="max-width: 100%; border-radius: 12px; margin-bottom: 4px;" onclick="window.openModal('${msg.media_url}', '')">`;
+                }
+
+                const dateLabel = msg.date ? msg.date.replace('T', ' ').slice(0, 16) : '';
+                bubble.innerHTML = `${mediaHtml}<div>${msg.text || ''}</div><div class="msg-meta">${dateLabel}</div>`;
+                stream.appendChild(bubble);
+            });
+
+            renderedCount += slice.length;
+            btn.style.display = renderedCount < filteredMessages.length ? 'block' : 'none';
+        };
+
+        initParticles();
+        initRelationshipCounter();
+        checkAndGenerateDailyQuests().then(() => { loadTasks(); loadArchive(); });
+        window.renderCalendar();
+        loadPhotos();
+        initChatArchive();
+    </script>
+</body>
+</html>
